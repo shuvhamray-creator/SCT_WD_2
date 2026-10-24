@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stopwatch | SkillCraft Technology</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#2b2a36;--panel:#34333f;--line:#444356;--text:#f3f2f8;--muted:#a3a1b8;--teal:#3fd0b4;--blue:#4a7bd0;--amber:#e0a458;--red:#ef5b5b;--ring:#403f50}
+[data-theme=light]{--bg:#eef0f5;--panel:#fff;--line:#d9dce6;--text:#1d1e2a;--muted:#6b6e84;--teal:#16a38a;--blue:#3a68bd;--amber:#c98a2f;--red:#d63f3f;--ring:#e3e6ee}
+*{box-sizing:border-box;margin:0}
+body{min-height:100vh;background:var(--bg);color:var(--text);font-family:Poppins,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px;
+background-image:radial-gradient(circle at 0 0,rgba(63,208,180,.22),transparent 35%),radial-gradient(circle at 100% 100%,rgba(74,123,208,.2),transparent 40%)}
+.app{width:100%;max-width:980px;display:grid;grid-template-columns:1.05fr 1fr;gap:24px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:28px}
+header{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+h1{font-family:'Bebas Neue',Impact,sans-serif;font-size:2.4rem;letter-spacing:.04em;font-weight:400}
+.brand{color:var(--muted);font-size:.85rem}
+.tools{display:flex;gap:8px;align-items:center}
+.tools button{padding:8px 12px;font-size:.8rem}
+.status{display:inline-flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);margin-right:8px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--muted)}
+.running .dot{background:var(--teal);animation:pulse 1.4s infinite}
+.paused .dot{background:var(--amber)}.done .dot{background:var(--red)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,208,180,.6)}70%,100%{box-shadow:0 0 0 10px rgba(63,208,180,0)}}
+.modes{display:grid;grid-template-columns:1fr 1fr;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:18px}
+.modes button{border:0;padding:10px}
+.modes button.on{background:var(--panel);box-shadow:0 1px 6px rgba(0,0,0,.25);color:var(--teal)}
+.setter{display:none;justify-content:center;align-items:center;gap:8px;margin-bottom:12px}
+.setter.show{display:flex}
+.setter input{width:70px;font:inherit;text-align:center;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.dial{position:relative;width:min(100%,320px);aspect-ratio:1;margin:8px auto 22px}
+.dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+.dial circle{fill:none;stroke-width:10;stroke-linecap:round}
+.track{stroke:var(--ring)}
+.prog{stroke:url(#g);transition:stroke .3s}
+.done-ring .prog{stroke:var(--red)}
+.readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.time{font-family:'Bebas Neue',Impact,sans-serif;font-size:clamp(3.4rem,11vw,5rem);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.time small{font-size:.5em;color:var(--teal)}
+.sub{margin-top:6px;color:var(--muted);font-size:.85rem;font-variant-numeric:tabular-nums}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{font:inherit;font-weight:500;border:1px solid var(--line);background:transparent;color:var(--text);padding:14px;border-radius:12px;cursor:pointer;transition:transform .12s,border-color .2s}
+button:hover:not(:disabled){border-color:var(--teal)}
+button:active:not(:disabled){transform:scale(.97)}
+button:disabled{opacity:.35;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+#main{grid-column:1/-1;background:linear-gradient(135deg,var(--teal),var(--blue));border:0;color:#10131a;font-weight:600;font-size:1.05rem}
+#main.pause{background:var(--amber)}
+kbd{font-family:inherit;font-size:.75rem;opacity:.65;margin-left:6px;border:1px solid currentColor;border-radius:4px;padding:0 5px}
+.right{display:flex;flex-direction:column;min-height:480px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.stat{background:var(--bg);border-radius:12px;padding:12px}
+.stat span{display:block;font-size:.72rem;color:var(--muted)}
+.stat b{font-weight:500;font-size:1rem;font-variant-numeric:tabular-nums}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.head h2{font-size:1rem;font-weight:500}
+.head div{display:flex;gap:8px}
+.head button{padding:6px 12px;font-size:.8rem}
+.list{flex:1;overflow-y:auto;max-height:340px;list-style:none;padding:0}
+.list li{display:grid;grid-template-columns:48px 1fr 1fr;gap:8px;padding:11px 8px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;font-size:.92rem;animation:in .3s}
+.list li.hd{color:var(--muted);font-size:.75rem;position:sticky;top:0;background:var(--panel);animation:none}
+.list li.best{color:var(--teal)}.list li.worst{color:var(--red)}
+.list li span:last-child{text-align:right;color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:48px 12px;font-size:.9rem;display:block!important}
+@keyframes in{from{background:rgba(63,208,180,.25)}}
+@media(max-width:760px){.app{grid-template-columns:1fr}.right{min-height:0}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="app">
+  <header>
+    <div><h1>Stopwatch</h1><div class="brand">SkillCraft Technology · Task 02</div></div>
+    <div class="tools">
+      <div class="status" id="status" role="status"><span class="dot"></span><span id="stText">Ready</span></div>
+      <button id="sound" aria-pressed="true">Sound on</button>
+      <button id="theme">Light theme</button>
+    </div>
+  </header>
+
+  <section class="card" aria-label="Timer">
+    <div class="modes" role="tablist">
+      <button id="mSw" class="on" role="tab">Stopwatch</button>
+      <button id="mCd" role="tab">Timer<kbd>M</kbd></button>
+    </div>
+    <div class="setter" id="setter">
+      <input id="inMin" type="number" min="0" max="999" value="5" aria-label="Minutes"> min
+      <input id="inSec" type="number" min="0" max="59" value="0" aria-label="Seconds"> sec
+    </div>
+    <div class="dial" id="dial">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fd0b4"/><stop offset="1" stop-color="#4a7bd0"/></linearGradient></defs>
+        <circle class="track" cx="100" cy="100" r="90"/>
+        <circle class="prog" id="prog" cx="100" cy="100" r="90"/>
+      </svg>
+      <div class="readout">
+        <div class="time" id="time">00:00<small>.00</small></div>
+        <div class="sub" id="sub">Lap 1 · 00:00.00</div>
+      </div>
+    </div>
+    <div class="controls">
+      <button id="main">Start<kbd>Space</kbd></button>
+      <button id="lap" disabled>Lap<kbd>L</kbd></button>
+      <button id="reset" disabled>Reset<kbd>R</kbd></button>
+    </div>
+  </section>
+
+  <section class="card right" aria-label="Laps">
+    <div class="stats">
+      <div class="stat"><span>Fastest lap</span><b id="sBest">–</b></div>
+      <div class="stat"><span>Slowest lap</span><b id="sWorst">–</b></div>
+      <div class="stat"><span>Average</span><b id="sAvg">–</b></div>
+    </div>
+    <div class="head"><h2>Lap times</h2>
+      <div><button id="copy" disabled>Copy</button><button id="csv" disabled>Export CSV</button></div>
+    </div>
+    <ul class="list" id="list"></ul>
+  </section>
+</main>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id),C=2*Math.PI*90,KEY='skillcraft-stopwatch-v2';
+const el=Object.fromEntries(['time','sub','main','lap','reset','csv','copy','list','prog','status','stText','sBest','sWorst','sAvg','sound','theme','mSw','mCd','setter','inMin','inSec','dial'].map(i=>[i,$(i)]));
+let S={mode:'sw',state:'idle',base:0,start:0,laps:[],lastMark:0,cdTotal:300000,sound:true,theme:'dark'},raf;
+
+try{const v=JSON.parse(localStorage.getItem(KEY));if(v)S={...S,...v}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+const p=n=>String(n).padStart(2,'0');
+const fmt=(ms,cs=true)=>{const t=Math.floor(ms/10),m=Math.floor(t/6000);return `${m>=60?Math.floor(m/60)+':':''}${p(m%60)}:${p(Math.floor(t/100)%60)}${cs?'.'+p(t%100):''}`};
+const elapsed=()=>S.state==='running'?S.base+Date.now()-S.start:S.base;
+
+function beep(n=1,f=880){
+  if(!S.sound)return;
+  try{const a=new (window.AudioContext||window.webkitAudioContext)();
+    for(let i=0;i<n;i++){const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+i*.25;
+      o.frequency.value=f;g.gain.setValueAtTime(.15,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);
+      o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+.2)}
+    setTimeout(()=>a.close(),n*300+300)}catch(e){}
+}
+
+function render(){
+  const e=elapsed(),cd=S.mode==='cd';
+  let shown=e,frac=(e%60000)/60000;
+  if(cd){
+    const left=Math.max(0,S.cdTotal-e);shown=left;frac=S.cdTotal?left/S.cdTotal:0;
+    if(left===0&&S.state==='running'){finish();return}
+  }
+  el.time.innerHTML=`${fmt(shown,false)}<small>.${p(Math.floor(shown/10)%100)}</small>`;
+  el.sub.textContent=cd?`Elapsed · ${fmt(e)}`:`Lap ${S.laps.length+1} · ${fmt(e-S.lastMark)}`;
+  el.prog.style.strokeDashoffset=C*(1-frac);
+  document.title=S.state==='idle'?'Stopwatch | SkillCraft Technology':`${fmt(shown)} · ${cd?'Timer':'Stopwatch'}`;
+}
+const loop=()=>{render();raf=requestAnimationFrame(loop)};
+
+function setUi(label){
+  const s=S.state;
+  el.status.className='status '+(label==='Done'?'done':s==='idle'?'':s);
+  el.stText.textContent=label||{idle:'Ready',running:'Running',paused:'Paused'}[s];
+  el.main.innerHTML=(s==='running'?'Pause':s==='paused'?'Resume':'Start')+'<kbd>Space</kbd>';
+  el.main.classList.toggle('pause',s==='running');
+  el.lap.disabled=s!=='running';
+  el.reset.disabled=s==='idle';
+  el.setter.classList.toggle('show',S.mode==='cd'&&s==='idle');
+  el.dial.classList.toggle('done-ring',label==='Done');
+  el.mSw.classList.toggle('on',S.mode==='sw');el.mCd.classList.toggle('on',S.mode==='cd');
+  document.documentElement.dataset.theme=S.theme;
+  el.theme.textContent=S.theme==='dark'?'Light theme':'Dark theme';
+  el.sound.textContent=S.sound?'Sound on':'Sound off';el.sound.setAttribute('aria-pressed',S.sound);
+  el.lap.firstChild.textContent=S.mode==='cd'?'Split':'Lap';
+}
+
+function toggle(){
+  if(S.mode==='cd'&&S.state==='idle'){
+    S.cdTotal=((+el.inMin.value||0)*60+(+el.inSec.value||0))*1000;
+    if(S.cdTotal<=0){el.inMin.focus();return}
+  }
+  if(S.state==='running'){S.base+=Date.now()-S.start;cancelAnimationFrame(raf);S.state='paused';setUi();render()}
+  else{S.start=Date.now();S.state='running';setUi();loop()}
+  save();
+}
+function finish(){
+  cancelAnimationFrame(raf);S.base=S.cdTotal;S.state='paused';
+  el.time.innerHTML='00:00<small>.00</small>';el.prog.style.strokeDashoffset=C;
+  setUi('Done');beep(3,660);save();
+}
+function lap(){
+  if(S.state!=='running')return;
+  const t=elapsed();S.laps.push({n:S.laps.length+1,split:t-S.lastMark,total:t});
+  S.lastMark=t;beep(1,1200);drawLaps();save();
+}
+function reset(){
+  cancelAnimationFrame(raf);Object.assign(S,{state:'idle',base:0,start:0,laps:[],lastMark:0});
+  setUi();render();drawLaps();save();
+}
+function setMode(m){
+  if(S.mode===m)return;
+  if(S.state!=='idle')reset();
+  S.mode=m;setUi();render();save();
+}
+function drawLaps(){
+  const L=S.laps;el.csv.disabled=el.copy.disabled=!L.length;
+  if(!L.length){
+    el.list.innerHTML='<li class="empty">Press Start, then Lap to record split times.</li>';
+    el.sBest.textContent=el.sWorst.textContent=el.sAvg.textContent='–';return;
+  }
+  const sp=L.map(l=>l.split),mn=Math.min(...sp),mx=Math.max(...sp);
+  el.sBest.textContent=fmt(mn);el.sWorst.textContent=fmt(mx);
+  el.sAvg.textContent=fmt(sp.reduce((a,b)=>a+b,0)/sp.length);
+  el.list.innerHTML='<li class="hd"><span>Lap</span><span>Split</span><span>Total</span></li>'+
+    [...L].reverse().map(l=>`<li class="${L.length>1?(l.split===mn?'best':l.split===mx?'worst':''):''}"><span>${l.n}</span><span>${fmt(l.split)}</span><span>${fmt(l.total)}</span></li>`).join('');
+}
+const rows=()=>['Lap,Split,Total',...S.laps.map(l=>`${l.n},${fmt(l.split)},${fmt(l.total)}`)].join('\n');
+el.csv.onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows()],{type:'text/csv'}));a.download='stopwatch-laps.csv';a.click();URL.revokeObjectURL(a.href)};
+el.copy.onclick=async()=>{try{await navigator.clipboard.writeText(rows().replace(/,/g,'\t'));el.copy.textContent='Copied';setTimeout(()=>el.copy.textContent='Copy',1500)}catch(e){el.copy.textContent='Copy failed'}};
+
+el.main.onclick=toggle;el.lap.onclick=lap;el.reset.onclick=reset;
+el.mSw.onclick=()=>setMode('sw');el.mCd.onclick=()=>setMode('cd');
+el.sound.onclick=()=>{S.sound=!S.sound;setUi();save()};
+el.theme.onclick=()=>{S.theme=S.theme==='dark'?'light':'dark';setUi();save()};
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||(e.target.tagName==='BUTTON'&&e.code==='Space'))return;
+  const k=e.key.toLowerCase();
+  if(e.code==='Space'){e.preventDefault();toggle()}
+  else if(k==='l')lap();else if(k==='r')reset();
+  else if(k==='m')setMode(S.mode==='sw'?'cd':'sw');
+});
+
+// restore saved session
+el.prog.style.strokeDasharray=C;
+el.inMin.value=Math.floor(S.cdTotal/60000);el.inSec.value=Math.floor(S.cdTotal/1000)%60;
+const wasRunning=S.state==='running';
+setUi(S.mode==='cd'&&S.state==='paused'&&S.base>=S.cdTotal?'Done':undefined);
+drawLaps();render();
+if(wasRunning)loop();
+})();
+</script>
+</body>
+</html>
